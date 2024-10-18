@@ -57,8 +57,9 @@ const (
 )
 
 const (
-	DbxFile   = "file"
-	DbxFolder = "folder"
+	DbxFile          = "file"
+	DbxFolder        = "folder"
+	DbxPathSeparator = "/"
 )
 
 const threshold = 10 // safety time span for requesting new access token

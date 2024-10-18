@@ -39,3 +39,7 @@ const (
 const (
 	CapClose = "Close"
 )
+
+const (
+	TxtDropboxError = "Dropbox error occurred."
+)

@@ -9,6 +9,7 @@ package ui
 import (
 	"Dropbox_REST_Client/api"
 	"Dropbox_REST_Client/assets"
+	"Dropbox_REST_Client/dialogs"
 	"Dropbox_REST_Client/models"
 	"github.com/richardwilkes/unison"
 	"github.com/richardwilkes/unison/enums/align"
@@ -73,7 +74,7 @@ func createToolbarPanel() *unison.Panel {
 
 func installDefaultMenus(wnd *unison.Window) {
 	unison.DefaultMenuFactory().BarForWindow(wnd, func(m unison.Menu) {
-		unison.InsertStdMenus(m, AboutDialog, SettingsDialogFromMenu, nil)
+		unison.InsertStdMenus(m, dialogs.AboutDialog, SettingsDialogFromMenu, nil)
 	})
 }
 
@@ -120,6 +121,6 @@ func newFileSystemTable(content *unison.Panel) {
 func aboutUser() {
 	userinfo, err := api.GetCurrentUser()
 	if err == nil {
-		AboutUserDialog(userinfo)
+		dialogs.AboutUserDialog(userinfo)
 	}
 }

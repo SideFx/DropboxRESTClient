@@ -4,7 +4,7 @@
 // https://github.com/richardwilkes/unison
 // ---------------------------------------------------------------------------------------------------------------------
 
-package ui
+package dialogs
 
 import (
 	"Dropbox_REST_Client/api"
@@ -31,7 +31,7 @@ func AboutDialog(item unison.MenuItem) {
 		//if len(titleIcons) > 0 {
 		//	wnd.SetTitleIcons(titleIcons)
 		//}
-		okButton = dialog.Button(unison.ModalResponseOK)
+		okButton := dialog.Button(unison.ModalResponseOK)
 		okButton.ClickCallback = func() {
 			dialog.StopModal(unison.ModalResponseOK)
 		}

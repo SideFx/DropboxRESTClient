@@ -9,6 +9,7 @@ package models
 import (
 	"Dropbox_REST_Client/api"
 	"Dropbox_REST_Client/assets"
+	"Dropbox_REST_Client/dialogs"
 	"fmt"
 	"github.com/richardwilkes/toolbox/errs"
 	"github.com/richardwilkes/toolbox/fatal"
@@ -29,13 +30,14 @@ const dragKey = "fileSystemRow"
 
 var _ unison.TableRowData[*fileSystemRow] = &fileSystemRow{}
 var fileSystemTable *unison.Table[*fileSystemRow]
+var selectedRows []*fileSystemRow
 
 type Caption struct {
 	Title string
 	Align align.Enum
 }
 
-type TableDescription struct {
+type TableHeaderDescription struct {
 	NoOfColumns int
 	Captions    []Caption
 }
@@ -62,7 +64,7 @@ type fileSystemRow struct {
 	M            fileSystemItem
 }
 
-var fileSystemTableDescription = TableDescription{
+var fileSystemTableDescription = TableHeaderDescription{
 	NoOfColumns: 6,
 	Captions: []Caption{
 		{assets.CapName, align.Start},
@@ -102,7 +104,10 @@ func NewFileSystemTable() (*unison.Table[*fileSystemRow], *unison.TableHeader[*f
 			return from == to
 		},
 		func(from, to *unison.Table[*fileSystemRow], move bool) *unison.UndoEdit[any] {
-			DropboxMoveFileItems(to)
+			selectedRows = nil // clear selection
+			for _, row := range from.SelectedRows(true) {
+				selectedRows = append(selectedRows, row) // copy selection to "var selectedRows []*fileSystemRow"
+			}
 			return nil
 		},
 		func(undo *unison.UndoEdit[any], from, to *unison.Table[*fileSystemRow], move bool) {
@@ -110,9 +115,7 @@ func NewFileSystemTable() (*unison.Table[*fileSystemRow], *unison.TableHeader[*f
 	)
 
 	fileSystemTable.DropOccurredCallback = func() {
-		fmt.Println("DropOccurred")
-		// do Dropbox move REST calls
-		//DropboxMoveFileItems()
+		DropboxMoveFileItems() // perform move operation
 	}
 	return fileSystemTable, fileSystemTableHeader
 }
@@ -127,9 +130,6 @@ func (d *fileSystemRow) CloneForTarget(target unison.Paneler, newParent *fileSys
 	clone.parent = newParent
 	clone._parent = newParent
 	clone.id = tid.MustNewTID('a')
-
-	fmt.Println("CloneForTarget")
-
 	return &clone
 }
 
@@ -281,66 +281,52 @@ func DropboxReadRootFolders() {
 	}
 }
 
-func DropboxMoveFileItems(table *unison.Table[*fileSystemRow]) {
-	var from, to string
-
-	selectedRows := table.SelectedRows(true)
-
+func DropboxMoveFileItems() {
+	var fromPath, toPath string
+	var err error
+	var m *api.FileItemMetadataType
 	for _, row := range selectedRows {
-		if row._parent != nil {
-			from = row._parent.M.Path
+		m = nil
+		if row._parent != nil { // parent before dnd
+			fromPath = row._parent.M.Path
 		} else {
-			from = ""
+			fromPath = api.DbxPathSeparator
 		}
-		if row.parent != nil {
-			to = row.parent.M.Path
+		if row.parent != nil { // parent after dnd
+			toPath = row.parent.M.Path
 		} else {
-			to = ""
+			toPath = api.DbxPathSeparator
 		}
-		if from == to {
+		if fromPath == toPath {
 			continue
 		}
-		from = path.Join(from, row.M.Name)
-		to = path.Join(to, row.M.Name)
-		fmt.Println("Move:", from, to)
-
-		/*
-
-			m, err := api.MoveFiles(from, to)
-			if err == nil {
-				row.M.Path = m.Metadata.PathDisplay
-				row.M.Modified = convertTimestamp(m.Metadata.ServerModified)
-				row.M.Name = m.Metadata.Name
-				row._parent = row.Parent()
+		fromPath = path.Join(fromPath, row.M.Name)
+		toPath = path.Join(toPath, row.M.Name)
+		m, err = api.MoveFiles(fromPath, toPath)
+		if err == nil {
+			row.M.Path = m.Metadata.PathDisplay
+			row.M.Modified = convertTimestamp(m.Metadata.ServerModified)
+			row.M.Name = m.Metadata.Name
+			row._parent = row.Parent()
+			if row.parent != nil {
 				row.parent.SetOpen(true) // expand new parent
-			} else {
-				//fmt.Println("Name", row.M.Name)
-				row._parent.AddChild(row)
-				row.parent.DeleteChild(row)
-				row.parent.SetParent(row._parent)
-				//for _, c := range row.parent.children {
-				//	fmt.Println("Child", c.M.Name)
-				//}
 			}
-
-		*/
-
-		row._parent.AddChild(row)
-		row.parent.DeleteChild(row)
-		row.parent, row._parent = row._parent, row.parent
-		fileSystemTable.SyncToModel()
-		//row.parent.SetOpen(true)
-		//row._parent.SetOpen(true)
-		for _, s := range row.parent.children {
-			fmt.Println("parent", row.parent.M.Name, s.M.Name)
-		}
-		for _, t := range row._parent.children {
-			fmt.Println("_parent", row._parent.M.Name, t.M.Name)
+		} else {
+			if row._parent != nil {
+				row._parent.AddChild(row) // old parent (drag source)
+			}
+			if row.parent != nil {
+				row.parent.DeleteChild(row) // new parent
+			}
+			row.parent = row._parent // restore parent
+			break
 		}
 	}
-	//fileSystemTable.SyncToModel()
-
+	fileSystemTable.SyncToModel()
 	selectedRows = nil
+	if err != nil {
+		dialogs.DialogToDisplaySystemError(assets.TxtDropboxError, err)
+	}
 }
 
 func addText(parent *unison.Panel, text string, ink unison.Ink, font unison.Font) {
@@ -369,8 +355,4 @@ func convertBytes(b int64) string {
 func convertTimestamp(timestamp string) string {
 	result := strings.Replace(timestamp, "T", " ", 1)
 	return strings.Replace(result, "Z", " ", 1)
-}
-
-func Undo(table unison.Table[*fileSystemRow]) {
-
 }
