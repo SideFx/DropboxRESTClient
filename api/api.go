@@ -73,7 +73,6 @@ func GetCurrentUser() (*UserInfoType, error) {
 	if err != nil {
 		return nil, err
 	}
-	currentUserId = r.AccountId
 	return &r, nil
 }
 
@@ -171,6 +170,7 @@ func ListFolders(path string, recursive bool, limit uint32) ([]*FileItemType, er
 	return entries, nil
 }
 
+// MoveFiles -move files to destination folder
 func MoveFiles(from, to string) (*FileItemMetadataType, error) {
 	var metadata *FileItemMetadataType
 	var err error
@@ -205,6 +205,7 @@ func MoveFiles(from, to string) (*FileItemMetadataType, error) {
 	return metadata, nil
 }
 
+// DeleteFile -delete single file
 func DeleteFile(path string) (*FileItemMetadataType, error) {
 	var err error
 	var metadata *FileItemMetadataType
@@ -235,6 +236,7 @@ func DeleteFile(path string) (*FileItemMetadataType, error) {
 	return metadata, nil
 }
 
+// BatchDeleteFiles -delete a bunch of files
 func BatchDeleteFiles(path []string) (*FileItemBatchDeletedType, error) {
 	var err error
 	var metadata *FileItemBatchDeletedType
@@ -298,9 +300,9 @@ func BatchDeleteFiles(path []string) (*FileItemBatchDeletedType, error) {
 		}
 		switch metadata.Tag {
 		case DbxInProgress:
-			time.Sleep(3 * time.Second)
+			time.Sleep(pollSleepTime * time.Second)
 			loop++
-			if loop > 10 { // deploy parachute
+			if loop > maxJobPolls { // deploy parachute
 				return nil, errors.New(assets.ErrorAsyncJobTimeOut)
 			}
 			break
@@ -314,6 +316,49 @@ func BatchDeleteFiles(path []string) (*FileItemBatchDeletedType, error) {
 		}
 	}
 	return metadata, nil
+}
+
+// CreateFolder -create new folder in Dropbox
+func CreateFolder(path string) (*FileItemType, error) {
+	var err error
+	var metadata *FileItemMetadataType
+	var dbxpara = CreateFolderParaType{true, path}
+	jdbxpara, err := anyToJson[CreateFolderParaType](dbxpara)
+	if err != nil {
+		return nil, err
+	}
+	var para = RESTParaType{
+		ParaURL:    dropboxAPIURI + endPointCreateFolder,
+		ParaMethod: http.MethodPost,
+		ParaHeader: []KeyValueType{
+			{paraAuthorization, valAuthBearer + accessToken.token},
+			{paraContentType, valContentTypeJson},
+		},
+		ParaForm: url.Values{},
+		ParaBody: jdbxpara,
+	}
+	metadata, err = restCall[*FileItemMetadataType](para)
+	if err != nil {
+		return nil, err
+	}
+	var folder = FileItemType{
+		DbxFolder,
+		"",
+		"",
+		FileLockInfoType{},
+		false,
+		metadata.Metadata.Id,
+		false,
+		metadata.Metadata.Name,
+		metadata.Metadata.PathDisplay,
+		metadata.Metadata.PathLower,
+		nil,
+		"",
+		"",
+		metadata.Metadata.SharingInfo,
+		0,
+	}
+	return &folder, nil
 }
 
 // requestAccessToken -checks if the current access token has expired and fetches a new one, if needed,

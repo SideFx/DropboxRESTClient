@@ -31,6 +31,7 @@ const (
 	endPointFilesDelete           = "/2/files/delete_v2"
 	endPointFilesDeleteBatch      = "/2/files/delete_batch"
 	endPointFilesDeleteBatchCheck = "/2/files/delete_batch/check"
+	endPointCreateFolder          = "/2/files/create_folder_v2"
 )
 
 const (
@@ -75,7 +76,10 @@ const (
 	DbxFailed     = "failed"
 )
 
-const threshold = 10 // safety time span for requesting new access token
+const threshold = 10    // safety time span for requesting new access token
+const maxJobPolls = 10  // number of polls for async job
+const pollSleepTime = 3 // sleep time till next poll
+const InvalidCharacters string = "/\\<>:\"|?*."
 
 type AppAuthType struct {
 	AppKey    string
@@ -135,6 +139,11 @@ type BatchCheckParaType struct {
 
 type DeleteBatchParaType struct {
 	Entries []FilePathParaType `json:"entries"`
+}
+
+type CreateFolderParaType struct {
+	Autorename bool   `json:"autorename"`
+	Path       string `json:"path"`
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -259,7 +268,6 @@ type FileItemBatchDeletedType struct {
 var authkey AppAuthType
 var accessToken accessTokenType
 var refreshToken string
-var currentUserId string
 
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -267,6 +275,13 @@ var currentUserId string
 func SetConnectionData(key AppAuthType, token string) {
 	authkey = key
 	refreshToken = token
+}
+
+func CheckPathIsValid(path string) bool {
+	if strings.ContainsAny(path, InvalidCharacters) {
+		return false
+	}
+	return true
 }
 
 // restCall -generic REST call

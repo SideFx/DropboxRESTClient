@@ -284,3 +284,60 @@ func newImagePanel(image *unison.Image) *unison.Panel {
 	})
 	return panel
 }
+
+func DialogToDisplayErrorMessage(primary string, detail string) {
+	panel := unison.NewMessagePanel(primary, detail)
+	if dialog, err := unison.NewDialog(unison.DefaultDialogTheme.ErrorIcon, unison.DefaultDialogTheme.ErrorIconInk, panel,
+		[]*unison.DialogButtonInfo{unison.NewOKButtonInfo()}, unison.NotResizableWindowOption()); err != nil {
+		errs.Log(err)
+	} else {
+		wnd := dialog.Window()
+		wnd.SetTitle(assets.CapError)
+		//if len(titleIcons) > 0 {
+		//	wnd.SetTitleIcons(titleIcons)
+		//}
+		dialog.RunModal()
+	}
+}
+
+const inpTextSizeMax = 250
+
+func DialogToQueryFolderName() string {
+	var dialog *unison.Dialog
+	var err error
+	panel := unison.NewPanel()
+	panel.SetLayout(&unison.FlexLayout{
+		Columns:  2,
+		HSpacing: 10,
+		VSpacing: unison.StdVSpacing,
+	})
+	lblName := unison.NewLabel()
+	lblName.Font = unison.LabelFont
+	lblName.SetTitle(assets.CapFolderName)
+	inpName := unison.NewField()
+	inpName.Font = unison.FieldFont
+	inpName.MinimumTextWidth = inpTextSizeMax
+	inpName.ModifiedCallback = func(before, after *unison.FieldState) {
+		dialog.Button(unison.ModalResponseOK).SetEnabled(after.Text != "" && api.CheckPathIsValid(after.Text))
+	}
+	panel.AddChild(lblName)
+	panel.AddChild(inpName)
+	if dialog, err = unison.NewDialog(nil, nil, panel,
+		[]*unison.DialogButtonInfo{unison.NewCancelButtonInfo(), unison.NewOKButtonInfo()},
+		unison.NotResizableWindowOption()); err != nil {
+		errs.Log(err)
+	} else {
+		wnd := dialog.Window()
+		wnd.SetTitle(assets.CapCreateFolder)
+		//if len(titleIcons) > 0 {
+		//	wnd.SetTitleIcons(titleIcons)
+		//}
+		dialog.Button(unison.ModalResponseOK).SetEnabled(false)
+		dialog.Button(unison.ModalResponseCancel).ClickCallback = func() {
+			inpName.SetText("")
+			dialog.StopModal(unison.ModalResponseCancel)
+		}
+		dialog.RunModal()
+	}
+	return inpName.Text()
+}

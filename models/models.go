@@ -360,6 +360,54 @@ func DropboxDeleteFileItems() {
 	}
 }
 
+func DropboxCreateFolder(isRoot bool, folderName string) {
+	var parent string
+	var parentRow *fileSystemRow = nil
+	var folder *api.FileItemType
+	var err error
+	selectedrows := fileSystemTable.SelectedRows(true)
+	if !isRoot {
+		switch len(selectedrows) {
+		case 0:
+			dialogs.DialogToDisplayErrorMessage(assets.ErrorNoFolderSelected, "")
+			return
+		case 1:
+			if selectedrows[0].M.IsFolder {
+				parent = selectedrows[0].M.Path
+				parentRow = selectedrows[0]
+			} else {
+				dialogs.DialogToDisplayErrorMessage(assets.ErrorNoFolderSelected, "")
+				return
+			}
+			break
+		default:
+			dialogs.DialogToDisplayErrorMessage(assets.ErrorTooManySelections, "")
+			return
+		}
+	} else {
+		parent = api.DbxPathSeparator
+	}
+	_path := path.Join(parent, folderName)
+	folder, err = api.CreateFolder(_path)
+	if err != nil {
+		dialogs.DialogToDisplaySystemError(assets.ErrorCreatingFolder, err)
+		return
+	}
+	row := newFileSystemRow(tid.MustNewTID('a'), *folder, parentRow)
+	if parentRow != nil {
+		parentRow.children = append(parentRow.children, row)
+		parentRow.SetOpen(true)
+	} else {
+		rootrows := fileSystemTable.RootRows()
+		rootrows = append(rootrows, row)
+		fileSystemTable.SetRootRows(rootrows)
+	}
+	fileSystemTable.SyncToModel()
+	for i := 0; i < fileSystemTableDescription.NoOfColumns; i++ {
+		fileSystemTable.SizeColumnToFit(i, true)
+	}
+}
+
 func dropboxFileSingleDelete(selectedrows []*fileSystemRow, rootrows []*fileSystemRow) error {
 	var err error
 	var metadata *api.FileItemMetadataType

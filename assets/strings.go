@@ -34,15 +34,18 @@ const (
 	CapEmail       = "Email"
 	CapDisplayName = "Name"
 	CapNamespace   = "Namespace"
+	CapFolderName  = "Folder Name"
 )
 
 const (
-	CapClose     = "Close"
-	CapRefresh   = "Refresh"
-	CapNewFolder = "New Folder"
-	CapDelete    = "Delete"
-	CapUpload    = "Upload"
-	CapDownload  = "Download"
+	CapClose         = "Close"
+	CapRefresh       = "Refresh"
+	CapNewFolder     = "New Folder"
+	CapNewRootFolder = "New Root Folder"
+	CapDelete        = "Delete"
+	CapUpload        = "Upload"
+	CapDownload      = "Download"
+	CapCreateFolder  = "Create Folder"
 )
 
 const (
@@ -53,4 +56,7 @@ const (
 	ErrorAsyncJobTimeOut       = "async job time out"
 	ErrorAsyncJobFailed        = "async job failed"
 	ErrorAsyncJobUnknownStatus = "async job returned unknown status"
+	ErrorTooManySelections     = "Please select only one folder as parent."
+	ErrorNoFolderSelected      = "No folder selected."
+	ErrorCreatingFolder        = "Error creating folder."
 )
