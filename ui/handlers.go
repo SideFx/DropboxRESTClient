@@ -26,12 +26,12 @@ func refresh() {
 	models.DropboxRefreshData()
 }
 
-func newFolder(isRoot bool) {
+func newFolder() {
 	folderName := dialogs.DialogToQueryFolderName()
 	if folderName == "" {
 		return
 	}
-	models.DropboxCreateFolder(isRoot, folderName)
+	models.DropboxCreateFolder(folderName)
 }
 
 func deleteItem() {

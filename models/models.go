@@ -116,6 +116,12 @@ func NewFileSystemTable() (*unison.Table[*fileSystemRow], *unison.TableHeader[*f
 	fileSystemTable.DropOccurredCallback = func() {
 		DropboxMoveFileItems() // perform move operation
 	}
+	fileSystemTable.KeyUpCallback = func(keyCode unison.KeyCode, mod unison.Modifiers) bool {
+		if keyCode == unison.KeyEscape {
+			fileSystemTable.ClearSelection()
+		}
+		return false
+	}
 	return fileSystemTable, fileSystemTableHeader
 }
 
@@ -338,32 +344,27 @@ func DropboxMoveFileItems() {
 	}
 }
 
-func DropboxCreateFolder(isRoot bool, folderName string) {
+func DropboxCreateFolder(folderName string) {
 	var parent string
 	var parentRow *fileSystemRow = nil
 	var folder *api.FileItemType
 	var err error
 	selectedrows := fileSystemTable.SelectedRows(true)
-	if !isRoot {
-		switch len(selectedrows) {
-		case 0:
+	switch len(selectedrows) {
+	case 0:
+		parent = api.DbxPathSeparator
+	case 1:
+		if selectedrows[0].M.IsFolder {
+			parent = selectedrows[0].M.Path
+			parentRow = selectedrows[0]
+		} else {
 			dialogs.DialogToDisplayErrorMessage(assets.ErrorNoFolderSelected, "")
 			return
-		case 1:
-			if selectedrows[0].M.IsFolder {
-				parent = selectedrows[0].M.Path
-				parentRow = selectedrows[0]
-			} else {
-				dialogs.DialogToDisplayErrorMessage(assets.ErrorNoFolderSelected, "")
-				return
-			}
-			break
-		default:
-			dialogs.DialogToDisplayErrorMessage(assets.ErrorTooManySelections, "")
-			return
 		}
-	} else {
-		parent = api.DbxPathSeparator
+		break
+	default:
+		dialogs.DialogToDisplayErrorMessage(assets.ErrorTooManySelections, "")
+		return
 	}
 	_path := path.Join(parent, folderName)
 	folder, err = api.CreateFolder(_path)

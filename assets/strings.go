@@ -38,14 +38,13 @@ const (
 )
 
 const (
-	CapClose         = "Close"
-	CapRefresh       = "Refresh"
-	CapNewFolder     = "New Folder"
-	CapNewRootFolder = "New Root Folder"
-	CapDelete        = "Delete"
-	CapUpload        = "Upload"
-	CapDownload      = "Download"
-	CapCreateFolder  = "Create Folder"
+	CapClose        = "Close"
+	CapRefresh      = "Refresh"
+	CapNewFolder    = "New Folder"
+	CapDelete       = "Delete"
+	CapUpload       = "Upload"
+	CapDownload     = "Download"
+	CapCreateFolder = "Create Folder"
 )
 
 const (

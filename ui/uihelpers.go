@@ -25,7 +25,6 @@ var settingsBtn *unison.Button
 var userInfoBtn *unison.Button
 var refreshBtn *unison.Button
 var addFolderBtn *unison.Button
-var addRootFolderBtn *unison.Button
 var deleteBtn *unison.Button
 var uploadBtn *unison.Button
 var downloadBtn *unison.Button
@@ -82,19 +81,12 @@ func createToolbarPanel() *unison.Panel {
 		panel.AddChild(refreshBtn)
 		refreshBtn.ClickCallback = func() { refresh() }
 	}
-	addRootFolderBtn, err = createButton(assets.CapNewRootFolder, assets.IconAddFolder)
-	if err == nil {
-		addRootFolderBtn.SetEnabled(true)
-		addRootFolderBtn.SetFocusable(false)
-		panel.AddChild(addRootFolderBtn)
-		addRootFolderBtn.ClickCallback = func() { newFolder(true) }
-	}
 	addFolderBtn, err = createButton(assets.CapNewFolder, assets.IconAddFolder)
 	if err == nil {
 		addFolderBtn.SetEnabled(true)
 		addFolderBtn.SetFocusable(false)
 		panel.AddChild(addFolderBtn)
-		addFolderBtn.ClickCallback = func() { newFolder(false) }
+		addFolderBtn.ClickCallback = func() { newFolder() }
 	}
 	deleteBtn, err = createButton(assets.CapDelete, assets.IconDelete)
 	if err == nil {
