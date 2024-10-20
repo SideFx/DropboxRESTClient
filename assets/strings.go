@@ -59,4 +59,5 @@ const (
 	ErrorTooManySelections     = "Please select only one folder as parent."
 	ErrorNoFolderSelected      = "No folder selected."
 	ErrorCreatingFolder        = "Error creating folder."
+	ErrorReadError             = "Read error."
 )

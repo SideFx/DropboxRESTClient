@@ -7,7 +7,6 @@
 package ui
 
 import (
-	"Dropbox_REST_Client/api"
 	"Dropbox_REST_Client/assets"
 	"Dropbox_REST_Client/dialogs"
 	"Dropbox_REST_Client/models"
@@ -109,14 +108,14 @@ func createToolbarPanel() *unison.Panel {
 		uploadBtn.SetEnabled(true)
 		uploadBtn.SetFocusable(false)
 		panel.AddChild(uploadBtn)
-		uploadBtn.ClickCallback = func() { uploadItem() }
+		uploadBtn.ClickCallback = func() { uploadItems() }
 	}
 	downloadBtn, err = createButton(assets.CapDownload, assets.IconDownload)
 	if err == nil {
 		downloadBtn.SetEnabled(true)
 		downloadBtn.SetFocusable(false)
 		panel.AddChild(downloadBtn)
-		downloadBtn.ClickCallback = func() { downloadItem() }
+		downloadBtn.ClickCallback = func() { downloadItems() }
 	}
 	return panel
 }
@@ -174,35 +173,4 @@ func createSpacer(width float32, panel *unison.Panel) {
 		return
 	})
 	panel.AddChild(spacer)
-}
-
-func aboutUser() {
-	userinfo, err := api.GetCurrentUser()
-	if err == nil {
-		dialogs.AboutUserDialog(userinfo)
-	}
-}
-
-func refresh() {
-	models.DropboxRefreshData()
-}
-
-func newFolder(isRoot bool) {
-	folderName := dialogs.DialogToQueryFolderName()
-	if folderName == "" {
-		return
-	}
-	models.DropboxCreateFolder(isRoot, folderName)
-}
-
-func deleteItem() {
-	models.DropboxDeleteFileItems()
-}
-
-func uploadItem() {
-
-}
-
-func downloadItem() {
-
 }
