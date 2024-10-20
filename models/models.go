@@ -267,6 +267,13 @@ func newFileSystemRow(id tid.TID, data api.FileItemType, parent *fileSystemRow) 
 	return row
 }
 
+func sync() {
+	fileSystemTable.SyncToModel()
+	for i := 0; i < fileSystemTableDescription.NoOfColumns; i++ {
+		fileSystemTable.SizeColumnToFit(i, true)
+	}
+}
+
 func DropboxReadRootFolders() {
 	var rootfolders []*fileSystemRow
 	folders, err := api.ListFolders("", false, 2000)
@@ -279,10 +286,7 @@ func DropboxReadRootFolders() {
 			fileSystemTable.SetRootRows(rootfolders)
 			fileSystemTable.SelectByIndex(0)
 		}
-		fileSystemTable.SyncToModel()
-		for i := 0; i < fileSystemTableDescription.NoOfColumns; i++ {
-			fileSystemTable.SizeColumnToFit(i, true)
-		}
+		sync()
 	}
 }
 
@@ -327,34 +331,8 @@ func DropboxMoveFileItems() {
 			break
 		}
 	}
-	fileSystemTable.SyncToModel()
+	sync()
 	selectedRows = nil
-	if err != nil {
-		dialogs.DialogToDisplaySystemError(assets.TxtDropboxError, err)
-	}
-}
-
-func DropboxDeleteFileItems() {
-	var err error
-	var row *fileSystemRow
-	var isfolder = false
-	var i int
-	rootrows := fileSystemTable.RootRows()
-	selectedrows := fileSystemTable.SelectedRows(true)
-	for i, row = range selectedrows {
-		i++
-		if row.M.IsFolder {
-			isfolder = true
-		}
-	}
-	if isfolder || i >= useBatchDelete {
-		// batch delete
-		err = dropboxFileBatchDelete(selectedrows, rootrows)
-	} else {
-		// single delete
-		err = dropboxFileSingleDelete(selectedrows, rootrows)
-	}
-	fileSystemTable.SyncToModel()
 	if err != nil {
 		dialogs.DialogToDisplaySystemError(assets.TxtDropboxError, err)
 	}
@@ -402,9 +380,32 @@ func DropboxCreateFolder(isRoot bool, folderName string) {
 		rootrows = append(rootrows, row)
 		fileSystemTable.SetRootRows(rootrows)
 	}
-	fileSystemTable.SyncToModel()
-	for i := 0; i < fileSystemTableDescription.NoOfColumns; i++ {
-		fileSystemTable.SizeColumnToFit(i, true)
+	sync()
+}
+
+func DropboxDeleteFileItems() {
+	var err error
+	var row *fileSystemRow
+	var isfolder = false
+	var i int
+	rootrows := fileSystemTable.RootRows()
+	selectedrows := fileSystemTable.SelectedRows(true)
+	for i, row = range selectedrows {
+		i++
+		if row.M.IsFolder {
+			isfolder = true
+		}
+	}
+	if isfolder || i >= useBatchDelete {
+		// batch delete
+		err = dropboxFileBatchDelete(selectedrows, rootrows)
+	} else {
+		// single delete
+		err = dropboxFileSingleDelete(selectedrows, rootrows)
+	}
+	sync()
+	if err != nil {
+		dialogs.DialogToDisplaySystemError(assets.TxtDropboxError, err)
 	}
 }
 
