@@ -27,8 +27,8 @@ import (
 // ---------------------------------------------------------------------------------------------------------------------
 
 const dragKey = "fileSystemRow"
+const useBatchDelete = 10
 
-var _ unison.TableRowData[*fileSystemRow] = &fileSystemRow{}
 var fileSystemTable *unison.Table[*fileSystemRow]
 var selectedRows []*fileSystemRow
 
@@ -110,10 +110,9 @@ func NewFileSystemTable() (*unison.Table[*fileSystemRow], *unison.TableHeader[*f
 			}
 			return nil
 		},
-		func(undo *unison.UndoEdit[any], from, to *unison.Table[*fileSystemRow], move bool) {
-		},
+		nil,
+		/* func(undo *unison.UndoEdit[any], from, to *unison.Table[*fileSystemRow], move bool) {} */
 	)
-
 	fileSystemTable.DropOccurredCallback = func() {
 		DropboxMoveFileItems() // perform move operation
 	}
@@ -181,16 +180,22 @@ func (d *fileSystemRow) ColumnCell(_, col int, foreground, _ unison.Ink, _, _, _
 	switch col {
 	case 0:
 		text = d.M.Name
+		break
 	case 1:
 		text = d.M.DbxId
+		break
 	case 2:
 		text = d.M.Modified
+		break
 	case 3:
 		text = d.M.Size
+		break
 	case 4:
 		text = d.M.Hash
+		break
 	case 5:
 		text = d.M.Path
+		break
 	default:
 		text = ""
 	}
@@ -264,9 +269,9 @@ func newFileSystemRow(id tid.TID, data api.FileItemType, parent *fileSystemRow) 
 
 func DropboxReadRootFolders() {
 	var rootfolders []*fileSystemRow
-	entries, err := api.ListFolders("", false, 2000)
+	folders, err := api.ListFolders("", false, 2000)
 	if err == nil {
-		for _, entry := range entries {
+		for _, entry := range folders {
 			row := newFileSystemRow(tid.MustNewTID('a'), *entry, nil)
 			rootfolders = append(rootfolders, row)
 		}
@@ -327,6 +332,109 @@ func DropboxMoveFileItems() {
 	if err != nil {
 		dialogs.DialogToDisplaySystemError(assets.TxtDropboxError, err)
 	}
+}
+
+func DropboxDeleteFileItems() {
+	var err error
+	var row *fileSystemRow
+	var isfolder = false
+	var i int
+	rootrows := fileSystemTable.RootRows()
+	selectedrows := fileSystemTable.SelectedRows(true)
+	for i, row = range selectedrows {
+		i++
+		if row.M.IsFolder {
+			isfolder = true
+		}
+	}
+	if isfolder || i >= useBatchDelete {
+		// batch delete
+		err = dropboxFileBatchDelete(selectedrows, rootrows)
+	} else {
+		// single delete
+		err = dropboxFileSingleDelete(selectedrows, rootrows)
+	}
+	fileSystemTable.SyncToModel()
+	if err != nil {
+		dialogs.DialogToDisplaySystemError(assets.TxtDropboxError, err)
+	}
+}
+
+func dropboxFileSingleDelete(selectedrows []*fileSystemRow, rootrows []*fileSystemRow) error {
+	var err error
+	var metadata *api.FileItemMetadataType
+	rootcount := len(rootrows)
+	for _, row := range selectedrows {
+		metadata, err = api.DeleteFile(row.M.DbxId)
+		if err != nil {
+			return err
+		}
+		if metadata.Metadata.Id == row.M.DbxId {
+			if row.parent != nil {
+				row.parent.DeleteChild(row)
+				row = nil
+			} else {
+				for j, rootrow := range rootrows {
+					if rootrow == row {
+						rootrows = slices.Delete(rootrows, j, j+1)
+						break
+					}
+					j++
+				}
+			}
+		}
+	}
+	// at least 1 rootrow removed
+	if rootcount > len(rootrows) {
+		fileSystemTable.SetRootRows(rootrows)
+	}
+	return nil
+}
+
+func dropboxFileBatchDelete(selectedrows []*fileSystemRow, rootrows []*fileSystemRow) error {
+	var err error
+	var _path []string
+	var row *fileSystemRow
+	var metadata *api.FileItemBatchDeletedType
+	rootcount := len(rootrows)
+	for _, row = range selectedrows {
+		_path = append(_path, row.M.DbxId)
+	}
+	metadata, err = api.BatchDeleteFiles(_path)
+	if err != nil {
+		return err
+	}
+	for _, row = range selectedrows {
+		for _, m := range metadata.Entries {
+			if m.Metadata.Id == row.M.DbxId {
+				if row.parent != nil {
+					row.parent.DeleteChild(row)
+					row = nil
+				} else {
+					for j, rootrow := range rootrows {
+						if rootrow == row {
+							rootrows = slices.Delete(rootrows, j, j+1)
+							break
+						}
+						j++
+					}
+				}
+				break
+			}
+		}
+	}
+	// at least 1 rootrow removed
+	if rootcount > len(rootrows) {
+		fileSystemTable.SetRootRows(rootrows)
+	}
+	return nil
+}
+
+func DropboxRefreshData() {
+	var rootfolders []*fileSystemRow
+	fileSystemTable.SetRootRows(rootfolders)
+	fileSystemTable.SyncToModel()
+	DropboxReadRootFolders()
 }
 
 func addText(parent *unison.Panel, text string, ink unison.Ink, font unison.Font) {

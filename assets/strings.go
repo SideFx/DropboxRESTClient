@@ -37,9 +37,20 @@ const (
 )
 
 const (
-	CapClose = "Close"
+	CapClose     = "Close"
+	CapRefresh   = "Refresh"
+	CapNewFolder = "New Folder"
+	CapDelete    = "Delete"
+	CapUpload    = "Upload"
+	CapDownload  = "Download"
 )
 
 const (
 	TxtDropboxError = "Dropbox error occurred."
+)
+
+const (
+	ErrorAsyncJobTimeOut       = "async job time out"
+	ErrorAsyncJobFailed        = "async job failed"
+	ErrorAsyncJobUnknownStatus = "async job returned unknown status"
 )

@@ -23,7 +23,12 @@ const (
 )
 
 var settingsBtn *unison.Button
-var testBtn *unison.Button
+var userInfoBtn *unison.Button
+var refreshBtn *unison.Button
+var addFolderBtn *unison.Button
+var deleteBtn *unison.Button
+var uploadBtn *unison.Button
+var downloadBtn *unison.Button
 var tableContent *unison.Panel
 
 func newSVGButton(svg *unison.SVG) *unison.Button {
@@ -62,12 +67,48 @@ func createToolbarPanel() *unison.Panel {
 		panel.AddChild(settingsBtn)
 		settingsBtn.ClickCallback = func() { SettingsDialog() }
 	}
-	testBtn, err = createButton(assets.CapAboutUser, assets.IconUserInfo)
+	userInfoBtn, err = createButton(assets.CapAboutUser, assets.IconUserInfo)
 	if err == nil {
-		testBtn.SetEnabled(true)
-		testBtn.SetFocusable(false)
-		panel.AddChild(testBtn)
-		testBtn.ClickCallback = func() { aboutUser() }
+		userInfoBtn.SetEnabled(true)
+		userInfoBtn.SetFocusable(false)
+		panel.AddChild(userInfoBtn)
+		userInfoBtn.ClickCallback = func() { aboutUser() }
+	}
+	createSpacer(30, panel)
+	refreshBtn, err = createButton(assets.CapRefresh, assets.IconRefresh)
+	if err == nil {
+		refreshBtn.SetEnabled(true)
+		refreshBtn.SetFocusable(false)
+		panel.AddChild(refreshBtn)
+		refreshBtn.ClickCallback = func() { refresh() }
+	}
+	addFolderBtn, err = createButton(assets.CapNewFolder, assets.IconAddFolder)
+	if err == nil {
+		addFolderBtn.SetEnabled(true)
+		addFolderBtn.SetFocusable(false)
+		panel.AddChild(addFolderBtn)
+		addFolderBtn.ClickCallback = func() { newFolder() }
+	}
+	deleteBtn, err = createButton(assets.CapDelete, assets.IconDelete)
+	if err == nil {
+		deleteBtn.SetEnabled(true)
+		deleteBtn.SetFocusable(false)
+		panel.AddChild(deleteBtn)
+		deleteBtn.ClickCallback = func() { deleteItem() }
+	}
+	uploadBtn, err = createButton(assets.CapUpload, assets.IconUpload)
+	if err == nil {
+		uploadBtn.SetEnabled(true)
+		uploadBtn.SetFocusable(false)
+		panel.AddChild(uploadBtn)
+		uploadBtn.ClickCallback = func() { uploadItem() }
+	}
+	downloadBtn, err = createButton(assets.CapDownload, assets.IconDownload)
+	if err == nil {
+		downloadBtn.SetEnabled(true)
+		downloadBtn.SetFocusable(false)
+		panel.AddChild(downloadBtn)
+		downloadBtn.ClickCallback = func() { downloadItem() }
 	}
 	return panel
 }
@@ -112,10 +153,19 @@ func newFileSystemTable(content *unison.Panel) {
 		VGrab:  true,
 	})
 	tableScrollArea.SetColumnHeader(header)
-	table.SelectionChangedCallback = func() {
-
-	}
 	content.AddChild(tableScrollArea)
+}
+
+func createSpacer(width float32, panel *unison.Panel) {
+	spacer := &unison.Panel{}
+	spacer.Self = spacer
+	spacer.SetSizer(func(_ unison.Size) (minSize, prefSize, maxSize unison.Size) {
+		minSize.Width = width
+		prefSize.Width = width
+		maxSize.Width = width
+		return
+	})
+	panel.AddChild(spacer)
 }
 
 func aboutUser() {
@@ -123,4 +173,24 @@ func aboutUser() {
 	if err == nil {
 		dialogs.AboutUserDialog(userinfo)
 	}
+}
+
+func refresh() {
+	models.DropboxRefreshData()
+}
+
+func newFolder() {
+
+}
+
+func deleteItem() {
+	models.DropboxDeleteFileItems()
+}
+
+func uploadItem() {
+
+}
+
+func downloadItem() {
+
 }

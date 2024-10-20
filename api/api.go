@@ -6,7 +6,9 @@
 package api
 
 import (
+	"Dropbox_REST_Client/assets"
 	"encoding/base64"
+	"errors"
 	"io"
 	"net/http"
 	"net/url"
@@ -81,7 +83,9 @@ func CurrentUserGetPicture(url string) ([]byte, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
@@ -170,6 +174,10 @@ func ListFolders(path string, recursive bool, limit uint32) ([]*FileItemType, er
 func MoveFiles(from, to string) (*FileItemMetadataType, error) {
 	var metadata *FileItemMetadataType
 	var err error
+	err = requestAccessToken()
+	if err != nil {
+		return nil, err
+	}
 	var dbxpara = FilesMoveParaType{
 		false,
 		true,
@@ -193,6 +201,117 @@ func MoveFiles(from, to string) (*FileItemMetadataType, error) {
 	metadata, err = restCall[*FileItemMetadataType](para)
 	if err != nil {
 		return nil, err
+	}
+	return metadata, nil
+}
+
+func DeleteFile(path string) (*FileItemMetadataType, error) {
+	var err error
+	var metadata *FileItemMetadataType
+	var dbxpara FilePathParaType
+	err = requestAccessToken()
+	if err != nil {
+		return nil, err
+	}
+	dbxpara = FilePathParaType{path}
+	jdbxpara, err := anyToJson[FilePathParaType](dbxpara)
+	if err != nil {
+		return nil, err
+	}
+	var para = RESTParaType{
+		ParaURL:    dropboxAPIURI + endPointFilesDelete,
+		ParaMethod: http.MethodPost,
+		ParaHeader: []KeyValueType{
+			{paraAuthorization, valAuthBearer + accessToken.token},
+			{paraContentType, valContentTypeJson},
+		},
+		ParaForm: url.Values{},
+		ParaBody: jdbxpara,
+	}
+	metadata, err = restCall[*FileItemMetadataType](para)
+	if err != nil {
+		return nil, err
+	}
+	return metadata, nil
+}
+
+func BatchDeleteFiles(path []string) (*FileItemBatchDeletedType, error) {
+	var err error
+	var metadata *FileItemBatchDeletedType
+	var dbxpara DeleteBatchParaType
+	var _path FilePathParaType
+	var para RESTParaType
+	err = requestAccessToken()
+	if err != nil {
+		return nil, err
+	}
+	for _, p := range path {
+		_path = FilePathParaType{p}
+		dbxpara.Entries = append(dbxpara.Entries, _path)
+	}
+	jdbxpara, err := anyToJson[DeleteBatchParaType](dbxpara)
+	if err != nil {
+		return nil, err
+	}
+	para = RESTParaType{
+		ParaURL:    dropboxAPIURI + endPointFilesDeleteBatch,
+		ParaMethod: http.MethodPost,
+		ParaHeader: []KeyValueType{
+			{paraAuthorization, valAuthBearer + accessToken.token},
+			{paraContentType, valContentTypeJson},
+		},
+		ParaForm: url.Values{},
+		ParaBody: jdbxpara,
+	}
+	metadata, err = restCall[*FileItemBatchDeletedType](para)
+	if err != nil {
+		return nil, err
+	}
+	tag := metadata.Tag
+	id := metadata.AsyncJobId
+	var loop = 0
+	for tag == DbxAsyncJobId && id != "" {
+		err = requestAccessToken()
+		if err != nil {
+			return nil, err
+		}
+		// poll async job
+		metadata = nil
+		batchcheck := BatchCheckParaType{"", id}
+		jbatchcheck, err := anyToJson[BatchCheckParaType](batchcheck)
+		if err != nil {
+			return nil, err
+		}
+		para = RESTParaType{
+			ParaURL:    dropboxAPIURI + endPointFilesDeleteBatchCheck,
+			ParaMethod: http.MethodPost,
+			ParaHeader: []KeyValueType{
+				{paraAuthorization, valAuthBearer + accessToken.token},
+				{paraContentType, valContentTypeJson},
+			},
+			ParaForm: url.Values{},
+			ParaBody: jbatchcheck,
+		}
+		metadata, err = restCall[*FileItemBatchDeletedType](para)
+		if err != nil {
+			return nil, err
+		}
+		switch metadata.Tag {
+		case DbxInProgress:
+			time.Sleep(3 * time.Second)
+			loop++
+			if loop > 10 { // deploy parachute
+				return nil, errors.New(assets.ErrorAsyncJobTimeOut)
+			}
+			break
+		case DbxComplete:
+			id, tag = "", ""
+			break
+		case DbxFailed:
+			return nil, errors.New(assets.ErrorAsyncJobFailed)
+		default:
+			return nil, errors.New(assets.ErrorAsyncJobUnknownStatus)
+		}
 	}
 	return metadata, nil
 }

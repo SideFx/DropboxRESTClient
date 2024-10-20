@@ -14,18 +14,23 @@ import (
 	"strings"
 )
 
+// Dropbox URIs
 const (
 	dropboxAuthURI    = "https://www.dropbox.com/oauth2/authorize"
 	dropboxAPIURI     = "https://api.dropbox.com"
 	dropboxContentURI = "https://content.dropbox.com"
 )
 
+// Dropbox REST API endpoints
 const (
-	endpointAuthToken          = "/oauth2/token"
-	endpointGetCurrentUser     = "/2/users/get_current_account"
-	endpointListFolder         = "/2/files/list_folder"
-	endpointListFolderContinue = "/2/files/list_folder/continue"
-	endPointFilesMove          = "/2/files/move_v2"
+	endpointAuthToken             = "/oauth2/token"
+	endpointGetCurrentUser        = "/2/users/get_current_account"
+	endpointListFolder            = "/2/files/list_folder"
+	endpointListFolderContinue    = "/2/files/list_folder/continue"
+	endPointFilesMove             = "/2/files/move_v2"
+	endPointFilesDelete           = "/2/files/delete_v2"
+	endPointFilesDeleteBatch      = "/2/files/delete_batch"
+	endPointFilesDeleteBatchCheck = "/2/files/delete_batch/check"
 )
 
 const (
@@ -60,6 +65,14 @@ const (
 	DbxFile          = "file"
 	DbxFolder        = "folder"
 	DbxPathSeparator = "/"
+	DbxAsyncJobId    = "async_job_id"
+)
+
+// Async job results
+const (
+	DbxInProgress = "in_progress"
+	DbxComplete   = "complete"
+	DbxFailed     = "failed"
 )
 
 const threshold = 10 // safety time span for requesting new access token
@@ -109,6 +122,19 @@ type FilesMoveParaType struct {
 	Autorename             bool   `json:"autorename"`
 	FromPath               string `json:"from_path"`
 	ToPath                 string `json:"to_path"`
+}
+
+type FilePathParaType struct {
+	Path string `json:"path"`
+}
+
+type BatchCheckParaType struct {
+	Tag        string `json:".tag"`
+	AsyncJobId string `json:"async_job_id"`
+}
+
+type DeleteBatchParaType struct {
+	Entries []FilePathParaType `json:"entries"`
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -212,6 +238,7 @@ type FileItemType struct {
 }
 
 type FileItemMetadataType struct {
+	Tag      string       `json:".tag"`
 	Metadata FileItemType `json:"metadata"`
 }
 
@@ -219,6 +246,12 @@ type ItemInfoType struct {
 	Cursor  string         `json:"cursor"`
 	Entries []FileItemType `json:"entries"`
 	HasMore bool           `json:"has_more"`
+}
+
+type FileItemBatchDeletedType struct {
+	Tag        string                 `json:".tag"`
+	AsyncJobId string                 `json:"async_job_id"`
+	Entries    []FileItemMetadataType `json:"entries"`
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -262,7 +295,9 @@ func restCall[T any](para RESTParaType) (T, error) {
 	if err != nil {
 		return result, err
 	}
-	defer resp.Body.Close()
+	defer func(Body io.ReadCloser) {
+		_ = Body.Close()
+	}(resp.Body)
 	body, err := io.ReadAll(resp.Body)
 	if resp.StatusCode == http.StatusOK {
 		err = json.Unmarshal(body, &result)

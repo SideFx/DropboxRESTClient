@@ -46,7 +46,7 @@ func saveSettings() {
 		_ = os.WriteFile(fname, j, 0644)
 	}
 	if _settings.AppAuth.AppKey != "" && _settings.AppAuth.AppSecret != "" {
-		testBtn.SetEnabled(true)
+		userInfoBtn.SetEnabled(true)
 	}
 }
 
