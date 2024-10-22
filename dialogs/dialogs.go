@@ -318,7 +318,7 @@ func DialogToQueryFolderName() string {
 	inpName.Font = unison.FieldFont
 	inpName.MinimumTextWidth = inpTextSizeMax
 	inpName.ModifiedCallback = func(before, after *unison.FieldState) {
-		dialog.Button(unison.ModalResponseOK).SetEnabled(after.Text != "" && api.CheckPathIsValid(after.Text))
+		dialog.Button(unison.ModalResponseOK).SetEnabled(after.Text != "" && api.CheckNameIsValid(after.Text))
 	}
 	panel.AddChild(lblName)
 	panel.AddChild(inpName)

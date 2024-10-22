@@ -312,8 +312,8 @@ func ConputeHash(payload []byte) string {
 	return fmt.Sprintf("%x", sha)
 }
 
-func CheckPathIsValid(path string) bool {
-	if strings.ContainsAny(path, DbxInvalidCharacters) {
+func CheckNameIsValid(name string) bool {
+	if strings.ContainsAny(name, DbxInvalidCharacters) {
 		return false
 	}
 	return true
