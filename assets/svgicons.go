@@ -27,3 +27,6 @@ var IconUpload string
 
 //go:embed download.svg
 var IconDownload string
+
+//go:embed clear.svg
+var IconClear string

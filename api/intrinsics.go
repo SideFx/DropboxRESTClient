@@ -6,8 +6,10 @@
 package api
 
 import (
+	"crypto/sha256"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -32,6 +34,7 @@ const (
 	endPointFilesDeleteBatch      = "/2/files/delete_batch"
 	endPointFilesDeleteBatchCheck = "/2/files/delete_batch/check"
 	endPointCreateFolder          = "/2/files/create_folder_v2"
+	endPointFilesUpload           = "/2/files/upload"
 )
 
 const (
@@ -63,10 +66,11 @@ const (
 )
 
 const (
-	DbxFile          = "file"
-	DbxFolder        = "folder"
-	DbxPathSeparator = "/"
-	DbxAsyncJobId    = "async_job_id"
+	DbxFile                     = "file"
+	DbxFolder                   = "folder"
+	DbxPathSeparator            = "/"
+	DbxInvalidCharacters string = "/\\<>:\"|?*."
+	DbxMaxUploadFileSize int64  = 150 * 1024 * 1024
 )
 
 // Async job results
@@ -74,12 +78,12 @@ const (
 	DbxInProgress = "in_progress"
 	DbxComplete   = "complete"
 	DbxFailed     = "failed"
+	DbxAsyncJobId = "async_job_id"
+	maxJobPolls   = 10 // number of polls for async job
+	pollSleepTime = 3  // sleep time till next poll
 )
 
-const threshold = 10    // safety time span for requesting new access token
-const maxJobPolls = 10  // number of polls for async job
-const pollSleepTime = 3 // sleep time till next poll
-const InvalidCharacters string = "/\\<>:\"|?*."
+const threshold = 10 // safety time span for requesting new access token
 
 type AppAuthType struct {
 	AppKey    string
@@ -268,6 +272,7 @@ type FileItemBatchDeletedType struct {
 var authkey AppAuthType
 var accessToken accessTokenType
 var refreshToken string
+var existingFilesStrategy string
 
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -277,8 +282,38 @@ func SetConnectionData(key AppAuthType, token string) {
 	refreshToken = token
 }
 
+// SetExistingFilesStrategy -either skip or update existing files (compare hashes)
+func SetExistingFilesStrategy(strategy string) {
+	existingFilesStrategy = strategy
+}
+
+// ConputeHash -compute file hash according to https://www.dropbox.com/developers/reference/content-hash
+func ConputeHash(payload []byte) string {
+	const chunksize int64 = 4194304
+	var sliceSize int64
+	var offset int64 = 0
+	var sha [32]byte
+	var slice, shabuffer []byte
+	var size = int64(len(payload))
+	for offset < size {
+		slice = nil
+		if size-offset >= chunksize {
+			sliceSize = chunksize
+		} else {
+			sliceSize = size - offset
+		}
+		slice = make([]byte, sliceSize)
+		copy(slice[:], payload[offset:])
+		offset += sliceSize
+		sha = sha256.Sum256(slice[:])
+		shabuffer = append(shabuffer, sha[:]...)
+	}
+	sha = sha256.Sum256(shabuffer)
+	return fmt.Sprintf("%x", sha)
+}
+
 func CheckPathIsValid(path string) bool {
-	if strings.ContainsAny(path, InvalidCharacters) {
+	if strings.ContainsAny(path, DbxInvalidCharacters) {
 		return false
 	}
 	return true

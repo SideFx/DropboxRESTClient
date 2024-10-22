@@ -118,7 +118,7 @@ func NewFileSystemTable() (*unison.Table[*fileSystemRow], *unison.TableHeader[*f
 	}
 	fileSystemTable.KeyUpCallback = func(keyCode unison.KeyCode, mod unison.Modifiers) bool {
 		if keyCode == unison.KeyEscape {
-			fileSystemTable.ClearSelection()
+			ClearSelection()
 		}
 		return false
 	}
@@ -513,4 +513,8 @@ func convertBytes(b int64) string {
 func convertTimestamp(timestamp string) string {
 	result := strings.Replace(timestamp, "T", " ", 1)
 	return strings.Replace(result, "Z", " ", 1)
+}
+
+func ClearSelection() {
+	fileSystemTable.ClearSelection()
 }

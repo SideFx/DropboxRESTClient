@@ -7,6 +7,7 @@
 package ui
 
 import (
+	"Dropbox_REST_Client/api"
 	"Dropbox_REST_Client/assets"
 	"Dropbox_REST_Client/dialogs"
 	"Dropbox_REST_Client/models"
@@ -28,6 +29,7 @@ var addFolderBtn *unison.Button
 var deleteBtn *unison.Button
 var uploadBtn *unison.Button
 var downloadBtn *unison.Button
+var btnSelection *unison.Button
 var tableContent *unison.Panel
 
 func newSVGButton(svg *unison.SVG) *unison.Button {
@@ -108,6 +110,34 @@ func createToolbarPanel() *unison.Panel {
 		downloadBtn.SetFocusable(false)
 		panel.AddChild(downloadBtn)
 		downloadBtn.ClickCallback = func() { downloadItems() }
+	}
+	createSpacer(10, panel)
+	lblMode := unison.NewLabel()
+	lblMode.Font = unison.LabelFont.Face().Font(toolbarFontSize)
+	lblMode.SetTitle(assets.CapOptions)
+	lblMode.SetLayoutData(align.Middle)
+	panel.AddChild(lblMode)
+	createSpacer(5, panel)
+	popMode := unison.NewPopupMenu[string]()
+	popMode.Font = unison.LabelFont.Face().Font(toolbarFontSize)
+	popMode.AddItem(assets.OptUpdate)
+	popMode.AddItem(assets.OptSkip)
+	popMode.SetFocusable(false)
+	popMode.SelectionChangedCallback = func(popup *unison.PopupMenu[string]) {
+		item, _ := popup.Selected()
+		api.SetExistingFilesStrategy(item)
+	}
+	popMode.SelectIndex(0)
+	panel.AddChild(popMode)
+	createSpacer(30, panel)
+	btnSelection, err = createButton(assets.CapClearSelection, assets.IconClear)
+	if err == nil {
+		btnSelection.SetEnabled(true)
+		btnSelection.SetFocusable(false)
+		panel.AddChild(btnSelection)
+		btnSelection.ClickCallback = func() {
+			models.ClearSelection()
+		}
 	}
 	return panel
 }

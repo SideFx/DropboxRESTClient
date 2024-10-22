@@ -7,7 +7,6 @@ package ui
 
 import (
 	"Dropbox_REST_Client/api"
-	"Dropbox_REST_Client/assets"
 	"Dropbox_REST_Client/dialogs"
 	"Dropbox_REST_Client/models"
 	"fmt"
@@ -39,7 +38,8 @@ func deleteItem() {
 }
 
 func uploadItems() {
-	var allItems []*api.FolderStructureType
+	var allFolders, allFiles []*api.FileSysStructureType
+	var err error
 	homeDir, _ := os.UserHomeDir()
 	dialog := unison.NewOpenDialog()
 	dialog.SetInitialDirectory(homeDir)
@@ -49,31 +49,24 @@ func uploadItems() {
 	dialog.SetCanChooseFiles(true)
 	dialog.SetResolvesAliases(false)
 	if dialog.RunModal() {
-		for _, p := range dialog.Paths() {
-			stat, err := os.Stat(p)
-			if err != nil {
-				dialogs.DialogToDisplaySystemError(assets.ErrorReadError, err)
-				fmt.Println(err)
-				return
-			}
-			isFolder := stat.IsDir()
-			if isFolder {
-				tmp, err := api.ExplodeFolder(p)
-				if err != nil {
-					dialogs.DialogToDisplaySystemError(assets.ErrorReadError, err)
-					return
-				}
-				allItems = append(allItems, tmp...)
-			} else {
-				allItems = append(allItems, &api.FolderStructureType{Path: p, IsFolder: isFolder})
-			}
+		allFolders, allFiles, err = api.PrepareDbxUpload(dialog.Paths())
+		if err != nil {
+			fmt.Println(err)
+			return
 		}
 	}
-	for _, item := range allItems {
-		fmt.Println(item.Path)
+	for _, folder := range allFolders {
+		fmt.Println(folder.DbxPath)
+	}
+	for _, file := range allFiles {
+		fmt.Println(file.DbxPath)
 	}
 }
 
 func downloadItems() {
-
+	filename := "/Users/jan/Downloads/milky-way-nasa.jpg"
+	content, _ := os.ReadFile(filename)
+	fmt.Println(len(content))
+	result := api.ConputeHash(content)
+	fmt.Println(result)
 }

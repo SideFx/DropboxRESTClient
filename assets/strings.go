@@ -21,7 +21,7 @@ const (
 const (
 	CapName     = "Name"
 	CapId       = "Id"
-	CapPath     = "Path"
+	CapPath     = "OSPath"
 	CapModified = "Modified"
 	CapSize     = "Size"
 	CapHash     = "Hash"
@@ -38,13 +38,15 @@ const (
 )
 
 const (
-	CapClose        = "Close"
-	CapRefresh      = "Refresh"
-	CapNewFolder    = "New Folder"
-	CapDelete       = "Delete"
-	CapUpload       = "Upload"
-	CapDownload     = "Download"
-	CapCreateFolder = "Create Folder"
+	CapClose          = "Close"
+	CapRefresh        = "Refresh"
+	CapNewFolder      = "New Folder"
+	CapDelete         = "Delete"
+	CapUpload         = "Upload"
+	CapDownload       = "Download"
+	CapCreateFolder   = "Create Folder"
+	CapClearSelection = "Clear Selection"
+	CapOptions        = "Existing Files"
 )
 
 const (
@@ -59,4 +61,9 @@ const (
 	ErrorNoFolderSelected      = "No folder selected."
 	ErrorCreatingFolder        = "Error creating folder."
 	ErrorReadError             = "Read error."
+)
+
+const (
+	OptUpdate = "Update"
+	OptSkip   = "Skip"
 )
