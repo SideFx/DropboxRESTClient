@@ -63,7 +63,8 @@ const (
 	DbxFile                     = "file"
 	DbxFolder                   = "folder"
 	DbxPathSeparator            = "/"
-	DbxInvalidCharacters string = "/\\<>:\"|?*."
+	DbxInvalidCharacters string = "/\\<>:\"|?*"
+	DbxReplaceBySubst           = "_"
 	DbxMaxUploadFileSize int64  = 150 * 1024 * 1024
 )
 

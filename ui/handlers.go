@@ -60,7 +60,7 @@ func uploadItems() {
 		fmt.Println(i, folder.DbxPath)
 	}
 	for j, file := range allFiles {
-		fmt.Println(j, file.DbxPath)
+		fmt.Println(j, file.DbxPath+file.FileName)
 	}
 }
 

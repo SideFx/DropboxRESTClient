@@ -14,6 +14,7 @@ import (
 type FileSysStructureType struct {
 	OSPath   string
 	DbxPath  string
+	FileName string
 	IsFolder bool
 	Size     int64
 }
@@ -24,22 +25,33 @@ func ExplodeFolder(folder string) ([]*FileSysStructureType, error) {
 	prefixpath := strings.TrimSuffix(folder, basepath)
 	err := filepath.Walk(folder,
 		func(path string, info os.FileInfo, err error) error {
+			var _path, _file string
 			if err != nil {
 				return err
 			}
-			_, file := filepath.Split(path)
-			if (file == "") || (file[0] != '.') {
-				shortpath := DbxPathSeparator + strings.TrimPrefix(path, prefixpath)
+			_path, _file = filepath.Split(path)
+			if info.IsDir() {
+				_path = _path + _file
+			}
+			// omit dot files and folders
+			if (_file == "") || (_file[0] != '.') {
+				shortpath := DbxPathSeparator + strings.TrimPrefix(_path, prefixpath)
 				shortpath = strings.ReplaceAll(shortpath, string(os.PathSeparator), DbxPathSeparator) // Windows
 				folderStructure = append(folderStructure,
-					&FileSysStructureType{OSPath: path, DbxPath: shortpath, IsFolder: info.IsDir(), Size: info.Size()})
+					&FileSysStructureType{
+						OSPath:   path,
+						DbxPath:  shortpath,
+						FileName: _file, //replaceInvalidChars(file),
+						IsFolder: info.IsDir(),
+						Size:     info.Size(),
+					})
 			}
 			return nil
 		})
 	if err != nil {
 		return nil, err
 	}
-	return folderStructure, err
+	return folderStructure, nil
 }
 
 func ListLocalFileStructure(selection []string) ([]*FileSysStructureType, []*FileSysStructureType, error) {
@@ -56,7 +68,8 @@ func ListLocalFileStructure(selection []string) ([]*FileSysStructureType, []*Fil
 			if file[0] != '.' {
 				files = append(files, &FileSysStructureType{
 					OSPath:   s,
-					DbxPath:  DbxPathSeparator + file,
+					DbxPath:  DbxPathSeparator,
+					FileName: file, //replaceInvalidChars(file),
 					IsFolder: true,
 					Size:     stat.Size()},
 				)
@@ -76,4 +89,14 @@ func ListLocalFileStructure(selection []string) ([]*FileSysStructureType, []*Fil
 		}
 	}
 	return folders, files, err
+}
+
+func replaceInvalidChars(filename string) string {
+	name := filename
+	if name != "" {
+		for _, char := range DbxInvalidCharacters {
+			name = strings.ReplaceAll(name, string(char), DbxReplaceBySubst)
+		}
+	}
+	return name
 }
