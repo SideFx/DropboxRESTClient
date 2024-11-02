@@ -36,14 +36,14 @@ func RequestRefreshToken(auth AppAuthType, code string) (string, error) {
 		ParaURL:    dropboxAPIURI + endpointAuthToken,
 		ParaMethod: http.MethodPost,
 		ParaHeader: []KeyValueType{
-			{paraContentType, valContentTypeURLForm},
-			{paraAuthorization, valAuthBasic + authString},
+			{paraContentType, string(valContentTypeURLForm)},
+			{paraAuthorization, string(valAuthBasic) + authString},
 		},
 		ParaForm: url.Values{
 			paraCode:      {code},
 			paraGrantType: {valAuthorizationCode},
 		},
-		ParaBody: "",
+		ParaBody: nil,
 	}
 	r, err = restCall[*RefreshTokenType](para)
 	if err != nil {
@@ -64,10 +64,10 @@ func GetCurrentUser() (*UserInfoType, error) {
 		ParaURL:    dropboxAPIURI + endpointGetCurrentUser,
 		ParaMethod: http.MethodPost,
 		ParaHeader: []KeyValueType{
-			{paraAuthorization, valAuthBearer + accessToken.token},
+			{paraAuthorization, string(valAuthBearer) + accessToken.token},
 		},
 		ParaForm: url.Values{},
-		ParaBody: "",
+		ParaBody: nil,
 	}
 	r, err = restCall[UserInfoType](para)
 	if err != nil {
@@ -120,11 +120,11 @@ func ListFolders(path string, recursive bool, limit uint32) ([]*FileItemType, er
 		ParaURL:    dropboxAPIURI + endpointListFolder,
 		ParaMethod: http.MethodPost,
 		ParaHeader: []KeyValueType{
-			{paraAuthorization, valAuthBearer + accessToken.token},
-			{paraContentType, valContentTypeJson},
+			{paraAuthorization, string(valAuthBearer) + accessToken.token},
+			{paraContentType, string(valContentTypeJson)},
 		},
 		ParaForm: url.Values{},
-		ParaBody: jdbxpara,
+		ParaBody: []byte(jdbxpara),
 	}
 	r, err = restCall[ItemInfoType](paraStart)
 	if err != nil {
@@ -151,11 +151,11 @@ func ListFolders(path string, recursive bool, limit uint32) ([]*FileItemType, er
 			ParaURL:    dropboxAPIURI + endpointListFolderContinue,
 			ParaMethod: http.MethodPost,
 			ParaHeader: []KeyValueType{
-				{paraAuthorization, valAuthBearer + accessToken.token},
-				{paraContentType, valContentTypeJson},
+				{paraAuthorization, string(valAuthBearer) + accessToken.token},
+				{paraContentType, string(valContentTypeJson)},
 			},
 			ParaForm: url.Values{},
-			ParaBody: jdbxcont,
+			ParaBody: []byte(jdbxcont),
 		}
 		c, err = restCall[ItemInfoType](paraCont)
 		if err != nil {
@@ -192,11 +192,11 @@ func MoveFiles(from, to string) (*FileItemMetadataType, error) {
 		ParaURL:    dropboxAPIURI + endPointFilesMove,
 		ParaMethod: http.MethodPost,
 		ParaHeader: []KeyValueType{
-			{paraAuthorization, valAuthBearer + accessToken.token},
-			{paraContentType, valContentTypeJson},
+			{paraAuthorization, string(valAuthBearer) + accessToken.token},
+			{paraContentType, string(valContentTypeJson)},
 		},
 		ParaForm: url.Values{},
-		ParaBody: jdbxpara,
+		ParaBody: []byte(jdbxpara),
 	}
 	metadata, err = restCall[*FileItemMetadataType](para)
 	if err != nil {
@@ -223,11 +223,11 @@ func DeleteFile(path string) (*FileItemMetadataType, error) {
 		ParaURL:    dropboxAPIURI + endPointFilesDelete,
 		ParaMethod: http.MethodPost,
 		ParaHeader: []KeyValueType{
-			{paraAuthorization, valAuthBearer + accessToken.token},
-			{paraContentType, valContentTypeJson},
+			{paraAuthorization, string(valAuthBearer) + accessToken.token},
+			{paraContentType, string(valContentTypeJson)},
 		},
 		ParaForm: url.Values{},
-		ParaBody: jdbxpara,
+		ParaBody: []byte(jdbxpara),
 	}
 	metadata, err = restCall[*FileItemMetadataType](para)
 	if err != nil {
@@ -259,11 +259,11 @@ func BatchDeleteFiles(path []string) (*FileItemBatchDeletedType, error) {
 		ParaURL:    dropboxAPIURI + endPointFilesDeleteBatch,
 		ParaMethod: http.MethodPost,
 		ParaHeader: []KeyValueType{
-			{paraAuthorization, valAuthBearer + accessToken.token},
-			{paraContentType, valContentTypeJson},
+			{paraAuthorization, string(valAuthBearer) + accessToken.token},
+			{paraContentType, string(valContentTypeJson)},
 		},
 		ParaForm: url.Values{},
-		ParaBody: jdbxpara,
+		ParaBody: []byte(jdbxpara),
 	}
 	metadata, err = restCall[*FileItemBatchDeletedType](para)
 	if err != nil {
@@ -288,11 +288,11 @@ func BatchDeleteFiles(path []string) (*FileItemBatchDeletedType, error) {
 			ParaURL:    dropboxAPIURI + endPointFilesDeleteBatchCheck,
 			ParaMethod: http.MethodPost,
 			ParaHeader: []KeyValueType{
-				{paraAuthorization, valAuthBearer + accessToken.token},
-				{paraContentType, valContentTypeJson},
+				{paraAuthorization, string(valAuthBearer) + accessToken.token},
+				{paraContentType, string(valContentTypeJson)},
 			},
 			ParaForm: url.Values{},
-			ParaBody: jbatchcheck,
+			ParaBody: []byte(jbatchcheck),
 		}
 		metadata, err = restCall[*FileItemBatchDeletedType](para)
 		if err != nil {
@@ -318,6 +318,12 @@ func BatchDeleteFiles(path []string) (*FileItemBatchDeletedType, error) {
 	return metadata, nil
 }
 
+func UploadFile(payload []byte, path string) error {
+	var err error
+
+	return err
+}
+
 // CreateFolder -create new folder in Dropbox
 func CreateFolder(path string) (*FileItemType, error) {
 	var err error
@@ -331,11 +337,11 @@ func CreateFolder(path string) (*FileItemType, error) {
 		ParaURL:    dropboxAPIURI + endPointCreateFolder,
 		ParaMethod: http.MethodPost,
 		ParaHeader: []KeyValueType{
-			{paraAuthorization, valAuthBearer + accessToken.token},
-			{paraContentType, valContentTypeJson},
+			{paraAuthorization, string(valAuthBearer) + accessToken.token},
+			{paraContentType, string(valContentTypeJson)},
 		},
 		ParaForm: url.Values{},
-		ParaBody: jdbxpara,
+		ParaBody: []byte(jdbxpara),
 	}
 	metadata, err = restCall[*FileItemMetadataType](para)
 	if err != nil {
@@ -373,14 +379,14 @@ func requestAccessToken() error {
 			ParaURL:    dropboxAPIURI + endpointAuthToken,
 			ParaMethod: http.MethodPost,
 			ParaHeader: []KeyValueType{
-				{paraContentType, valContentTypeURLForm},
-				{paraAuthorization, valAuthBasic + authString},
+				{paraContentType, string(valContentTypeURLForm)},
+				{paraAuthorization, string(valAuthBasic) + authString},
 			},
 			ParaForm: url.Values{
 				paraGrantType:    {valRefreshToken},
 				paraRefreshToken: {refreshToken},
 			},
-			ParaBody: "",
+			ParaBody: nil,
 		}
 		r, err = restCall[RefreshTokenType](para)
 		if err != nil {

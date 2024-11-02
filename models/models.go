@@ -392,7 +392,6 @@ func DropboxDeleteFileItems() {
 	rootrows := fileSystemTable.RootRows()
 	selectedrows := fileSystemTable.SelectedRows(true)
 	for i, row = range selectedrows {
-		i++
 		if row.M.IsFolder {
 			isfolder = true
 		}

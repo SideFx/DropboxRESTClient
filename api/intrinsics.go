@@ -49,20 +49,14 @@ const (
 	paraGrantType     = "grant_type"
 	paraCode          = "code"
 	paraRefreshToken  = "refresh_token"
+	paraDbxAPIArg     = "Dropbox-API-Arg"
 )
 
 const (
-	valResponseType       = "code"
-	valTokenAccessType    = "offline"
-	valContentTypeURLForm = "application/x-www-form-urlencoded"
-	valContentTypeJson    = "application/json"
-	valAuthorizationCode  = "authorization_code"
-	valRefreshToken       = "refresh_token"
-)
-
-const (
-	valAuthBasic  = "Basic "
-	valAuthBearer = "Bearer "
+	valResponseType      = "code"
+	valTokenAccessType   = "offline"
+	valAuthorizationCode = "authorization_code"
+	valRefreshToken      = "refresh_token"
 )
 
 const (
@@ -106,8 +100,31 @@ type RESTParaType struct {
 	ParaMethod string
 	ParaHeader []KeyValueType
 	ParaForm   url.Values
-	ParaBody   string
+	ParaBody   []byte //string
 }
+
+type DbxWriteMode string
+
+const (
+	Add       DbxWriteMode = "add"
+	OverWrite DbxWriteMode = "overwrite"
+	Update    DbxWriteMode = "update"
+)
+
+type contentType string
+
+const (
+	valContentTypeURLForm     contentType = "application/x-www-form-urlencoded"
+	valContentTypeOctetStream contentType = "application/octet-steam"
+	valContentTypeJson        contentType = "application/json"
+)
+
+type authenticationType string
+
+const (
+	valAuthBasic  authenticationType = "Basic "
+	valAuthBearer authenticationType = "Bearer "
+)
 
 //----------------------------------------------------------------------------------------------------------------------
 
@@ -148,6 +165,17 @@ type DeleteBatchParaType struct {
 type CreateFolderParaType struct {
 	Autorename bool   `json:"autorename"`
 	Path       string `json:"path"`
+}
+
+type UploadFileParaType struct {
+	AutoRename     bool                `json:"autorename"`
+	Mode           string              `json:"mode"`
+	Path           string              `json:"path"`
+	ClientModified string              `json:"client_modified"`
+	Mute           bool                `json:"mute"`
+	PropertyGroups []PropertyGroupType `json:"property_groups"`
+	StrictConflict bool                `json:"strict_conflict"`
+	ContentHash    string              `json:"content_hash"`
 }
 
 //----------------------------------------------------------------------------------------------------------------------
@@ -329,8 +357,8 @@ func restCall[T any](para RESTParaType) (T, error) {
 	if len(para.ParaForm) > 0 {
 		requestbody = strings.NewReader(para.ParaForm.Encode()) // form fields
 	} else {
-		if para.ParaBody != "" {
-			requestbody = strings.NewReader(para.ParaBody) // json
+		if len(para.ParaBody) > 0 {
+			requestbody = strings.NewReader(string(para.ParaBody)) // json
 		}
 	}
 	req, err := http.NewRequest(para.ParaMethod, para.ParaURL, requestbody)

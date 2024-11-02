@@ -42,7 +42,7 @@ func ExplodeFolder(folder string) ([]*FileSysStructureType, error) {
 	return folderStructure, err
 }
 
-func PrepareDbxUpload(selection []string) ([]*FileSysStructureType, []*FileSysStructureType, error) {
+func ListLocalFileStructure(selection []string) ([]*FileSysStructureType, []*FileSysStructureType, error) {
 	var folders []*FileSysStructureType
 	var files []*FileSysStructureType
 	var err error

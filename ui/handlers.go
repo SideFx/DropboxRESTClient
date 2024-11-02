@@ -49,21 +49,23 @@ func uploadItems() {
 	dialog.SetCanChooseFiles(true)
 	dialog.SetResolvesAliases(false)
 	if dialog.RunModal() {
-		allFolders, allFiles, err = api.PrepareDbxUpload(dialog.Paths())
+		allFolders, allFiles, err = api.ListLocalFileStructure(dialog.Paths())
 		if err != nil {
 			fmt.Println(err)
 			return
 		}
 	}
-	for _, folder := range allFolders {
-		fmt.Println(folder.DbxPath)
+	// TEST
+	for i, folder := range allFolders {
+		fmt.Println(i, folder.DbxPath)
 	}
-	for _, file := range allFiles {
-		fmt.Println(file.DbxPath)
+	for j, file := range allFiles {
+		fmt.Println(j, file.DbxPath)
 	}
 }
 
 func downloadItems() {
+	// TEST
 	filename := "/Users/jan/Downloads/milky-way-nasa.jpg"
 	content, _ := os.ReadFile(filename)
 	fmt.Println(len(content))
