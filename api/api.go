@@ -318,10 +318,38 @@ func BatchDeleteFiles(path []string) (*FileItemBatchDeletedType, error) {
 	return metadata, nil
 }
 
-func UploadFile(payload []byte, path string) error {
+// UploadFile -upload a single file to Dropbox (max. file size 150MB)
+func UploadFile(path string, payload []byte) (*FileItemType, error) {
 	var err error
-
-	return err
+	var para RESTParaType
+	var metadata *FileItemType
+	opts := UploadFileParaType{
+		AutoRename:     false,
+		Path:           path,
+		Mode:           OverWrite,
+		Mute:           false,
+		StrictConflict: false,
+	}
+	jopts, err := anyToJson(opts)
+	if err != nil {
+		return nil, err
+	}
+	para = RESTParaType{
+		ParaURL:    dropboxContentURI + endPointFilesUpload,
+		ParaMethod: http.MethodPost,
+		ParaHeader: []KeyValueType{
+			{paraAuthorization, string(valAuthBearer) + accessToken.token},
+			{paraContentType, string(valContentTypeJson)},
+			{paraDbxAPIArg, jopts},
+		},
+		ParaForm: url.Values{},
+		ParaBody: payload,
+	}
+	metadata, err = restCall[*FileItemType](para)
+	if err != nil {
+		return nil, err
+	}
+	return metadata, nil
 }
 
 // CreateFolder -create new folder in Dropbox
@@ -347,24 +375,8 @@ func CreateFolder(path string) (*FileItemType, error) {
 	if err != nil {
 		return nil, err
 	}
-	var folder = FileItemType{
-		DbxFolder,
-		"",
-		"",
-		FileLockInfoType{},
-		false,
-		metadata.Metadata.Id,
-		false,
-		metadata.Metadata.Name,
-		metadata.Metadata.PathDisplay,
-		metadata.Metadata.PathLower,
-		nil,
-		"",
-		"",
-		metadata.Metadata.SharingInfo,
-		0,
-	}
-	return &folder, nil
+	metadata.Metadata.Tag = DbxFolder
+	return &metadata.Metadata, nil
 }
 
 // requestAccessToken -checks if the current access token has expired and fetches a new one, if needed,

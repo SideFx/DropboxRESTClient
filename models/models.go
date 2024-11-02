@@ -264,7 +264,7 @@ func newFileSystemRow(id tid.TID, data api.FileItemType, parent *fileSystemRow) 
 		M: fileSystemItem{
 			data.Name,
 			data.Id,
-			convertTimestamp(data.ServerModified),
+			convertTimestamp(data.ClientModified),
 			convertBytes(data.Size),
 			data.ContentHash,
 			data.PathDisplay,
@@ -320,7 +320,7 @@ func DropboxMoveFileItems() {
 		m, err = api.MoveFiles(fromPath, toPath)
 		if err == nil {
 			row.M.Path = m.Metadata.PathDisplay
-			row.M.Modified = convertTimestamp(m.Metadata.ServerModified)
+			row.M.Modified = convertTimestamp(m.Metadata.ClientModified)
 			row.M.Name = m.Metadata.Name
 			row._parent = row.Parent()
 			if row.parent != nil {

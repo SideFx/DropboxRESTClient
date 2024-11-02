@@ -169,7 +169,7 @@ type CreateFolderParaType struct {
 
 type UploadFileParaType struct {
 	AutoRename     bool                `json:"autorename"`
-	Mode           string              `json:"mode"`
+	Mode           DbxWriteMode        `json:"mode"`
 	Path           string              `json:"path"`
 	ClientModified string              `json:"client_modified"`
 	Mute           bool                `json:"mute"`
@@ -252,6 +252,15 @@ type PropertyGroupType struct {
 	TemplateId string      `json:"template_id"`
 }
 
+type SymlinkInfoType struct {
+	Target string `json:"target"`
+}
+
+type ExportInfoType struct {
+	ExportAs      string   `json:"export_as"`
+	ExportOptions []string `json:"export_options"`
+}
+
 type SharingInfoType struct {
 	ModifiedBy           string `json:"modified_by"`
 	ParentSharedFolderId string `json:"parent_shared_folder_id"`
@@ -275,6 +284,9 @@ type FileItemType struct {
 	Rev                      string              `json:"rev"`
 	ServerModified           string              `json:"server_modified"`
 	SharingInfo              SharingInfoType     `json:"sharing_info"`
+	PreviewUrl               string              `json:"preview_url"`
+	SymlinkInfo              SymlinkInfoType     `json:"symlink_info"`
+	ExportInfo               ExportInfoType      `json:"export_info"`
 	Size                     int64               `json:"size"`
 }
 
